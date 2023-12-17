@@ -87,7 +87,7 @@ class Circle {
 }
 
 let circleArr = [];
-for (let i = 0; i < 30; i++) {
+for (let i = 0; i < 50; i++) {
   // sizes
   var rad = 10 + Math.random() * 40;
   var x = Math.random() * (innerWidth - rad * 2) + rad;
