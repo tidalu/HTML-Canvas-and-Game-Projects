@@ -141,6 +141,54 @@ function ballHitWall(ball) {
     ball.timeDiff1 = new Date();
   }
 }
+
+function ballHitBall(ball1, ball2) {
+  let collision = false;
+  let dx = ball1.x - ball2.x;
+  let dy = ball1.y - ball2.y;
+  // modified pathagorous , cuz sqrt is slow
+  let distance = dx * dx + dy * dy;
+  if (distance <= (ball1.radius + ball2.radius) * (ball1.radius + ball2.radius))
+    collision = true;
+
+  return collision;
+}
+
+function collideBalls(ball1, ball2) {
+  let dx = ball2.x - ball1.x;
+  let dy = ball2.y - ball1.y;
+  let distance = Math.sqrt(dx * dx + dy * dy);
+  //Work out the normalized collision vector (direction only)
+  let vCollisionNorm = { x: dx / distance, y: dy / distance };
+  //Relative velocity of ball 2
+  let vRelativeVelocity = { x: ball1.dx - ball2.dx, y: ball1.dy - ball2.dy };
+  //Calculate the dot product
+  let speed =
+    vRelativeVelocity.x * vCollisionNorm.x +
+    vRelativeVelocity.y * vCollisionNorm.y;
+  //Don't do anything because balls are already moving out of each others way
+  if (speed < 0) return;
+  let impulse = (2 * speed) / (ball1.mass + ball2.mass);
+  //Becuase we calculated the relative velocity of ball2. Ball1 needs to go in the opposite direction, hence a collision.
+  ball1.dx -= impulse * ball2.mass * vCollisionNorm.x;
+  ball1.dy -= impulse * ball2.mass * vCollisionNorm.y;
+  ball2.dx += impulse * ball1.mass * vCollisionNorm.x;
+  ball2.dy += impulse * ball1.mass * vCollisionNorm.y;
+  //Still have to account for elasticity
+  ball1.dy = ball1.dy * ball1.elasticity;
+  ball2.dy = ball2.dy * ball2.elasticity;
+}
+
+function collide(index) {
+  let ball = cannonBalls[index];
+  for (let j = index + 1; j < cannonBalls.length; j++) {
+    let testBall = cannonBalls[j];
+    if (ballHitBall(ball, testBall)) {
+      collideBalls(ball, testBall);
+    }
+  }
+}
+
 function animate() {
   requestAnimationFrame(animate);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -150,10 +198,11 @@ function animate() {
   cannon.draw();
   ctx.restore();
 
-  cannonBalls.forEach((ball) => {
+  cannonBalls.forEach((ball, index) => {
     // move the balls
     ball.move();
     ballHitWall(ball);
+    collide(index);
     // render the ball to canvvas
     ball.draw();
   });
