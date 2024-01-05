@@ -77,6 +77,7 @@ class CannonBall {
     this.shouldAudio = true;
     this.timeDiff1 = null;
     this.timeDiff2 = new Date();
+    this.color = 'black';
   }
 
   move() {
@@ -91,9 +92,13 @@ class CannonBall {
     this.y += this.dy;
   }
 
+  setColorRandom() {
+    this.color = getRandomColor(); // Set to a random color
+  }
+
   draw() {
     //Set next offsets to normal offsets
-    ctx.fillStyle = 'black';
+    ctx.fillStyle = this.color;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fill();
@@ -179,12 +184,25 @@ function collideBalls(ball1, ball2) {
   ball2.dy = ball2.dy * ball2.elasticity;
 }
 
+function getRandomColor() {
+  const letters = '0123456789ABCDEF';
+  let color = '#';
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+}
+
 function collide(index) {
   let ball = cannonBalls[index];
   for (let j = index + 1; j < cannonBalls.length; j++) {
     let testBall = cannonBalls[j];
     if (ballHitBall(ball, testBall)) {
       collideBalls(ball, testBall);
+
+      const collisionColor = getRandomColor();
+      ball.setColorRandom();
+      testBall.setColorRandom();
     }
   }
 }
@@ -249,7 +267,8 @@ canvas.addEventListener('click', (e) => {
   canShoot = false;
 
   let ballsPos = sortBallsPos(cannon.topX + 100, cannon.topY + 30);
-  cannonBalls.push(new CannonBall(angle, ballsPos.x, ballsPos.y));
+  let currentBall = new CannonBall(angle, ballsPos.x, ballsPos.y);
+  cannonBalls.push(currentBall);
 
   cannonSfx.currentTime = 0.2;
   cannonSfx.play();
