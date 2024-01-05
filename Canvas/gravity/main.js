@@ -1,5 +1,9 @@
 const canvas = document.querySelector('canvas');
 const ctx = canvas.getContext('2d');
+
+let cannonSfx = new Audio(
+  'https://ia803405.us.archive.org/1/items/metal-block/Anti%20Aircraft%20Cannon-18363-Free-Loops.com.mp3'
+);
 let cannonTop = new Image();
 cannonTop.src =
   'https://ia903407.us.archive.org/7/items/cannon_202104/cannon.png';
@@ -7,7 +11,7 @@ cannonTop.onload = renderImage;
 
 let mousePos = null;
 let angle = null;
-let canShoot = false;
+let canShoot = true;
 // start the application before the immage load
 
 function drawBorder() {
@@ -63,9 +67,26 @@ class CannonBall {
     this.y = y;
     this.dx = Math.cos(angle) * 7;
     this.dy = Math.sin(angle) * 7;
+    this.gravity = 0.05;
+    this.elasticity = 0.5;
+    this.friction = 0.008;
+    this.collAudio = new Audio(
+      'https://archive.org/download/metal-block_202104/metal-block.wav'
+    );
+    this.collAudio.volume = 0.7;
+    this.shouldAudio = true;
+    this.timeDiff1 = null;
+    this.timeDiff2 = new Date();
   }
 
   move() {
+    // sort out the gravity
+    if (this.y + this.gravity < 580) {
+      this.dy += this.gravity;
+    }
+
+    //apply friction to x axis
+    this.dx = this.dx - this.dx * this.friction;
     this.x += this.dx;
     this.y += this.dy;
   }
@@ -81,6 +102,45 @@ class CannonBall {
 
 let cannonBalls = [];
 
+function ballHitWall(ball) {
+  //A collision has occured on any side of the canvas
+  if (
+    ball.x + ball.radius > 580 ||
+    ball.x - ball.radius < 20 ||
+    ball.y + ball.radius > 580 ||
+    ball.y - ball.radius < 20
+  ) {
+    if (ball.timeDiff1) {
+      ball.timeDiff2 = new Date() - ball.timeDiff1;
+      ball.timeDiff2 < 200 ? (ball.shouldAudio = false) : null;
+    }
+    if (ball.shouldAudio) ball.collAudio.play();
+
+    //Sort out elasticity & then change direction
+    ball.dy = ball.dy * ball.elasticity;
+
+    //Right side of ball hits right side of canvas
+    if (ball.x + ball.radius > 580) {
+      //We set the X & Y coordinates first to prevent ball from getting stuck in the canvas border
+      ball.x = 580 - ball.radius;
+      ball.dx *= -1;
+    } else if (ball.x - ball.radius < 20) {
+      //Left side of ball hits left side of canvas
+      ball.x = 20 + ball.radius;
+      ball.dx *= -1;
+    } else if (ball.y + ball.radius > 580) {
+      //Bottom of ball hits bottom of canvas
+      ball.y = 580 - ball.radius;
+      ball.dy *= -1;
+    } else if (ball.y - ball.radius < 20) {
+      //Top of ball hits top of canvas
+      ball.y = 20 + ball.radius;
+      ball.dy *= -1;
+    }
+
+    ball.timeDiff1 = new Date();
+  }
+}
 function animate() {
   requestAnimationFrame(animate);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -93,7 +153,7 @@ function animate() {
   cannonBalls.forEach((ball) => {
     // move the balls
     ball.move();
-
+    ballHitWall(ball);
     // render the ball to canvvas
     ball.draw();
   });
@@ -142,10 +202,12 @@ canvas.addEventListener('click', (e) => {
   let ballsPos = sortBallsPos(cannon.topX + 100, cannon.topY + 30);
   cannonBalls.push(new CannonBall(angle, ballsPos.x, ballsPos.y));
 
+  cannonSfx.currentTime = 0.2;
+  cannonSfx.play();
   // can only shoot 1 second ata time
   setTimeout(() => {
     canShoot = true;
-  }, 1000);
+  }, 10);
 });
 
 // 24: 27
