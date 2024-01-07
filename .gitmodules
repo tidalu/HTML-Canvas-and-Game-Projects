@@ -1,0 +1,3 @@
+[submodule "Canvas/canvas-boilerplate"]
+	path = Canvas/canvas-boilerplate
+	url = https://github.com/christopher4lis/canvas-boilerplate.git
